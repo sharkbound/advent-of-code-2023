@@ -7,7 +7,7 @@ pub struct Day1Part1;
 
 impl Day1Part1 {
     pub fn new() -> Self {
-        Day1Part1 {}
+        Self {}
     }
 
     fn nom_get_rows<'a>(&self, input: &'a str) -> IResult<&'a str, Vec<&'a str>> {

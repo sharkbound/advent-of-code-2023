@@ -1,11 +1,9 @@
 use daytemplate::{Day, DayPart};
 use nom;
-use nom::character::complete::{alphanumeric1, digit0, digit1, line_ending, one_of};
+use nom::character::complete::{alphanumeric1, line_ending};
 use nom::{IResult};
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_until, take_while, take_while_m_n};
-use nom::character::is_digit;
-use nom::combinator::{map_res, not};
+use nom::bytes::complete::{tag, take_while_m_n};
 
 pub struct Day1Part2;
 
@@ -32,26 +30,27 @@ impl Day1Part2 {
 
         while !current.is_empty() {
             match Self::_nom_match_single_number(current) {
-                Ok((input, nom_tag)) => {
+                Ok((input, nom_match)) => {
                     current = input;
-                    match nom_tag {
+                    match nom_match {
                         "" => continue,
-                       digit@ ("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ) => {
-                            numbers.push(nom_tag.parse::<u32>().unwrap());
+                        "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
+                            numbers.push(nom_match.parse::<u32>().unwrap());
                         }
-                        number_str => {
-                            match number_str {
-                                "one" => numbers.push(1),
-                                "two" => numbers.push(2),
-                                "three" => numbers.push(3),
-                                "four" => numbers.push(4),
-                                "five" => numbers.push(5),
-                                "six" => numbers.push(6),
-                                "seven" => numbers.push(7),
-                                "eight" => numbers.push(8),
-                                "nine" => numbers.push(9),
-                                _ => unreachable!("Unexpected number string: {:?}", number_str),
-                            }
+
+                        string => {
+                            numbers.push(match string {
+                                "one" => 1,
+                                "two" => 2,
+                                "three" => 3,
+                                "four" => 4,
+                                "five" => 5,
+                                "six" => 6,
+                                "seven" => 7,
+                                "eight" => 8,
+                                "nine" => 9,
+                                _ => unreachable!("Unexpected number string: {:?}", string),
+                            })
                         }
                     }
                 }
@@ -83,7 +82,7 @@ impl Day for Day1Part2 {
         for line in lines {
             let line_numbers = self.nom_get_numbers(line);
             let (first, last) = (*line_numbers.first().unwrap(), *line_numbers.last().unwrap());
-            println!("LINE: {:?}, NUMBERS: {:?}, FIRST-LAST: {:?}", line, line_numbers, (first, last));
+            // println!("LINE: {:?}, NUMBERS: {:?}, FIRST-LAST: {:?}", line, line_numbers, (first, last));
             numbers.push(format!("{}{}", first, last).parse::<u32>().unwrap());
         }
         numbers
@@ -93,6 +92,7 @@ impl Day for Day1Part2 {
         // let input = self.sample("part_2");
         let input = self.input();
         let parsed = self.parse(&input);
-        println!("Day 1 Part 2: {:?}", parsed.iter().sum::<u32>());
+
+        println!("Day 1 Part 2: {:?}", parsed.iter().sum::<u32>()); // should be 54728
     }
 }

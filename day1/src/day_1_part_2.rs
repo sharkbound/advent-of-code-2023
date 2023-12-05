@@ -3,8 +3,7 @@ use nom;
 use nom::character::complete::{alphanumeric1, line_ending, one_of};
 use nom::{IResult};
 use nom::branch::alt;
-use nom::bytes::complete::{tag, tag_no_case, take_while_m_n};
-use nom::character::is_digit;
+use nom::bytes::complete::{tag_no_case};
 use nom::combinator::map_res;
 
 pub struct Day1Part2;
@@ -19,21 +18,23 @@ impl Day1Part2 {
     }
 
     fn _nom_match_single_number_string(input: &str) -> IResult<&str, u32> {
-        Ok(map_res(alt((
-            tag_no_case("one"), tag_no_case("two"), tag_no_case("three"), tag_no_case("four"), tag_no_case("five"),
-            tag_no_case("six"), tag_no_case("seven"), tag_no_case("eight"), tag_no_case("nine"),
-        )), |s: &str| Result::<u32, nom::error::ErrorKind>::Ok(match s {
-            "one" => 1,
-            "two" => 2,
-            "three" => 3,
-            "four" => 4,
-            "five" => 5,
-            "six" => 6,
-            "seven" => 7,
-            "eight" => 8,
-            "nine" => 9,
-            _ => unreachable!("Unexpected number string: {:?}", s),
-        }))(input)?)
+        Ok(map_res(
+            alt(
+                (tag_no_case("one"), tag_no_case("two"), tag_no_case("three"), tag_no_case("four"), tag_no_case("five"),
+                tag_no_case("six"), tag_no_case("seven"), tag_no_case("eight"), tag_no_case("nine"))
+            ),
+            |s: &str| Result::<u32, nom::error::ErrorKind>::Ok(match s {
+                "one" => 1,
+                "two" => 2,
+                "three" => 3,
+                "four" => 4,
+                "five" => 5,
+                "six" => 6,
+                "seven" => 7,
+                "eight" => 8,
+                "nine" => 9,
+                _ => unreachable!("Unexpected number string: {:?}", s),
+            }))(input)?)
     }
 
     fn _nom_match_numeric_number(input: &str) -> IResult<&str, u32> {
@@ -46,22 +47,20 @@ impl Day1Part2 {
 
         while !current.is_empty() {
             // Try to check if it's a number in string format
-            if let Ok((input, number)) = Self::_nom_match_single_number_string(current) {
+            if let Ok((_, number)) = Self::_nom_match_single_number_string(current) {
                 numbers.push(number);
-                current = input;
+                current = &current[1..];
                 continue;
             }
 
             // Try to parse as a number
-            if let Ok((input, number)) = Self::_nom_match_numeric_number(current) {
+            if let Ok((_, number)) = Self::_nom_match_numeric_number(current) {
                 numbers.push(number);
-                current = input;
+                current = &current[1..];
                 continue;
             }
-
             current = &current[1..];
         }
-
         numbers
     }
 }
@@ -83,7 +82,7 @@ impl Day for Day1Part2 {
         for line in lines {
             let line_numbers = self.nom_get_numbers(line);
             let (first, last) = (*line_numbers.first().unwrap(), *line_numbers.last().unwrap());
-            // println!("LINE: {:?}, NUMBERS: {:?}, FIRST-LAST: {:?}", line, line_numbers, (first, last));
+            println!("{:?} | {:?} | {:?}", line, (first, last), line_numbers);
             numbers.push(format!("{}{}", first, last).parse::<u32>().unwrap());
         }
         numbers
@@ -93,7 +92,6 @@ impl Day for Day1Part2 {
         // let input = self.sample("part_2");
         let input = self.input();
         let parsed = self.parse(&input);
-
-        println!("Day 1 Part 2: {:?}", parsed.iter().sum::<u32>()); // should be 54728
+        println!("Day 1 Part 2: {:?}", parsed.iter().sum::<u32>());
     }
 }

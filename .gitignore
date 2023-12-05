@@ -17,3 +17,4 @@ Cargo.lock
 /.idea/misc.xml
 /.idea/modules.xml
 /.idea/vcs.xml
+/secrets/session.txt

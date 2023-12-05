@@ -21,7 +21,7 @@ impl Day1Part2 {
         Ok(map_res(
             alt(
                 (tag_no_case("one"), tag_no_case("two"), tag_no_case("three"), tag_no_case("four"), tag_no_case("five"),
-                tag_no_case("six"), tag_no_case("seven"), tag_no_case("eight"), tag_no_case("nine"))
+                 tag_no_case("six"), tag_no_case("seven"), tag_no_case("eight"), tag_no_case("nine"))
             ),
             |s: &str| Result::<u32, nom::error::ErrorKind>::Ok(match s {
                 "one" => 1,
@@ -49,15 +49,8 @@ impl Day1Part2 {
             // Try to check if it's a number in string format
             if let Ok((_, number)) = Self::_nom_match_single_number_string(current) {
                 numbers.push(number);
-                current = &current[1..];
-                continue;
-            }
-
-            // Try to parse as a number
-            if let Ok((_, number)) = Self::_nom_match_numeric_number(current) {
+            } else if let Ok((_, number)) = Self::_nom_match_numeric_number(current) {
                 numbers.push(number);
-                current = &current[1..];
-                continue;
             }
             current = &current[1..];
         }
@@ -82,7 +75,6 @@ impl Day for Day1Part2 {
         for line in lines {
             let line_numbers = self.nom_get_numbers(line);
             let (first, last) = (*line_numbers.first().unwrap(), *line_numbers.last().unwrap());
-            println!("{:?} | {:?} | {:?}", line, (first, last), line_numbers);
             numbers.push(format!("{}{}", first, last).parse::<u32>().unwrap());
         }
         numbers

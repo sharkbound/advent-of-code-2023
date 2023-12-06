@@ -1,6 +1,8 @@
+#![allow(dead_code)]
+
 use std::fs::File;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
 pub enum DayPart {
     ONE,

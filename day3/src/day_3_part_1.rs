@@ -1,3 +1,4 @@
+use std::collections::{BinaryHeap, HashSet};
 use std::ops::Range;
 use ndarray::Array2;
 use daytemplate::DayPart;
@@ -39,27 +40,62 @@ impl daytemplate::Day for Day3Part1 {
     }
 
     fn solve(&self) {
-        let input = self.sample("part_1");
+        // let input = self.sample("part_1");
+        let input = self.input();
+
         let parsed = self.parse(&input);
         let processed = process_array(&parsed);
 
-        let mut total = 0;
-        let mut remaining_numbers = processed.numbers.clone();
-        for (_, index) in processed.symbols {
-            let matches = remaining_numbers.iter().enumerate().filter(|(_, number_match)| {
-                (number_match.start[1]..number_match.end[1])
-                    .any(|col|
-                        are_indexes_adjacent([number_match.start[0], col], index)
-                    )
-            }).map(|x| x.clone()).collect_to_vec();
-
-            total += matches.iter().fold(0, |acc, (_, number_match)| acc + number_match.number);
-            for (index, _) in matches.iter().rev() {
-                remaining_numbers.remove(*index); // fixme
+        let mut numbers_array = Array2::from_elem(array_shape::<2, _>(&parsed), 0u32);
+        for WholeNumberSearchResult { start, end, number } in processed.numbers.iter() {
+            let row = start[0];
+            for col in start[1]..end[1] {
+                numbers_array[[row, col]] = *number;
             }
+        }
+
+        let mut total = 0u32;
+        for (_, index) in processed.symbols.iter() {
+            total += find_numbers_around_index(&numbers_array, index).iter().sum::<u32>();
         }
         println!("Day 3 Part 1: {}", total);
     }
+}
+
+fn is_index_valid(shape: &[usize; 2], index: [usize; 2]) -> bool {
+    let [row, col] = index;
+    let [height, width] = shape;
+    return row < *height && col < *width;
+}
+
+fn find_numbers_around_index(arr: &Array2<u32>, search_origin: &[usize; 2]) -> HashSet<u32> {
+    let shape = array_shape::<2, _>(arr);
+    let [sy, sx] = search_origin;
+    let mut numbers = HashSet::new();
+    for yoffset in -1_i32..=1 {
+        for xoffset in -1_i32..=1 {
+            if let (Ok(y), Ok(x)) = (usize::try_from(*sy as i32 + yoffset), usize::try_from(*sx as i32 + xoffset)) {
+                let index = [y, x];
+                if !is_index_valid(&shape, index) {
+                    continue;
+                }
+                let value = arr[index];
+                if value != 0 {
+                    numbers.insert(value);
+                }
+            }
+        }
+    }
+    numbers
+}
+
+fn array_shape<const dims: usize, T>(arr: &Array2<T>) -> [usize; dims] {
+    let mut out: [usize; dims] = [0; dims];
+    let shape = arr.shape();
+    for i in 0..dims {
+        out[i] = shape[i];
+    }
+    out
 }
 
 fn are_indexes_adjacent(a: [usize; 2], b: [usize; 2]) -> bool {
@@ -98,7 +134,7 @@ struct ParsedArray {
     numbers: Vec<WholeNumberSearchResult>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 struct WholeNumberSearchResult {
     number: u32,
     start: [usize; 2],

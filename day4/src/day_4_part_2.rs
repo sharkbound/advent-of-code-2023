@@ -7,19 +7,19 @@ use nom::sequence::{separated_pair, tuple};
 use daytemplate::{Day, DayPart};
 use rustutils::collections::CollectToVec;
 
-pub struct Day4Part1 {}
+pub struct Day4Part2 {}
 
-impl Day4Part1 {
-    pub fn new() -> Day4Part1 {
-        Day4Part1 {}
+impl Day4Part2 {
+    pub fn new() -> Day4Part2 {
+        Day4Part2 {}
     }
 }
 
-impl Day for Day4Part1 {
+impl Day for Day4Part2 {
     type ParseOutput = Vec<Card>;
 
     fn part() -> DayPart {
-        DayPart::ONE
+        DayPart::TWO
     }
 
     fn day() -> i32 {
@@ -32,15 +32,13 @@ impl Day for Day4Part1 {
     }
 
     fn solve(&self) {
-        // let input = self.sample("part_1");
-        let input = self.input();
+        let input = self.sample("part_1");
+        // let input = self.input();
         let parsed = self.parse(&input);
         let total = parsed.iter().map(card_score).sum::<u32>();
-        // for card in &parsed {
-        //     let score = card_score(card);
-        //     println!("CARD #{} \n\tRAW:{card:?}\n\tScore: {score}", card.id)
-        // }
-        println!("Day 4 Part 1: {}", total);
+
+        // todo
+        println!("Day 4 Part 2: {}", total);
     }
 }
 
@@ -72,6 +70,7 @@ pub struct Card {
     winning: Vec<u32>,
     owned: Vec<u32>,
 }
+
 fn nom_parse_line(input: &str) -> IResult<&str, Card> {
     // Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
     let (input, _) = tag("Card")(input)?;

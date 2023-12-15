@@ -11,3 +11,4 @@ pub mod result;
 pub mod string_macros;
 pub mod map_to;
 pub mod path_macros;
+pub mod iterator_extensions;

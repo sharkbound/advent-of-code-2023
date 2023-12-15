@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use nom::bytes::complete::{tag};
 use nom::character::complete::{digit1, line_ending, multispace0, multispace1};
 use nom::combinator::{map, map_res};
@@ -6,6 +7,7 @@ use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{separated_pair, tuple};
 use daytemplate::{Day, DayPart};
 use rustutils::collections::CollectToVec;
+use rustutils::iterator_extensions::DerefItems;
 
 pub struct Day4Part2 {}
 
@@ -35,20 +37,21 @@ impl Day for Day4Part2 {
         let input = self.sample("part_1");
         // let input = self.input();
         let parsed = self.parse(&input);
-        let total = parsed.iter().map(card_score).sum::<u32>();
+        let mut copies = HashMap::new();
+        for card in parsed.iter() {
+            let win_count = winning_card_count(card);
+            for i in 1..=win_count {
+                *copies.entry(card.id + i).or_insert(0u32) += 1;
+            }
+        }
 
         // todo
-        println!("Day 4 Part 2: {}", total);
+        // println!("Day 4 Part 2: {}", total);
     }
 }
 
-fn card_score(card: &Card) -> u32 {
-    let winning = card.owned.iter().filter(|&c| card.winning.contains(c)).map(|c| *c).count();
-    let mut score = 0;
-    for _ in 0..winning {
-        score = double(score);
-    }
-    score
+fn winning_card_count(card: &Card) -> u32 {
+    card.owned.iter().filter(|c|card.winning.contains(c)).count() as u32
 }
 
 fn double(val: u32) -> u32 {

@@ -34,24 +34,26 @@ impl Day for Day4Part2 {
     }
 
     fn solve(&self) {
-        let input = self.sample("part_1");
-        // let input = self.input();
+        // let input = self.sample("part_1");
+        let input = self.input();
         let parsed = self.parse(&input);
-        let mut copies = HashMap::new();
+        let cards = parsed.iter().map(|c| (c.id, c)).collect::<HashMap<u32, &Card>>();
+        let mut counts = HashMap::<u32, u32>::new();
         for card in parsed.iter() {
             let win_count = winning_card_count(card);
+            *counts.entry(card.id).or_default() += 1;
+            let copy_count = counts.get(&card.id).map(|c| *c).unwrap_or(1);
             for i in 1..=win_count {
-                *copies.entry(card.id + i).or_insert(0u32) += 1;
+                *counts.entry(card.id + i).or_default() += copy_count;
             }
         }
 
-        // todo
-        // println!("Day 4 Part 2: {}", total);
+        println!("Day 4 Part 2: {}", counts.iter().map(|x| *x.1).sum::<u32>());
     }
 }
 
 fn winning_card_count(card: &Card) -> u32 {
-    card.owned.iter().filter(|c|card.winning.contains(c)).count() as u32
+    card.owned.iter().filter(|c| card.winning.contains(c)).count() as u32
 }
 
 fn double(val: u32) -> u32 {

@@ -8,6 +8,7 @@ use nom::IResult;
 use nom::multi::{many0, separated_list0};
 use nom::sequence::{tuple};
 use daytemplate::{Day, DayPart};
+use rustutils::collections::CollectToVec;
 use rustutils::nom_helpers::consume_empty_space;
 
 pub struct Day5Part2;
@@ -37,6 +38,10 @@ impl Day for Day5Part2 {
         // let input = self.sample("part_1").replace("\r\n", "\n");
         let input = self.input().replace("\r\n", "\n");
         let (groups, seeds) = self.parse(&input);
+        let seed_ranges = seeds
+            .chunks_exact(2)
+            .map(|range| range[0]..(range[0] + range[1]))
+            .collect_to_vec();
 
         let groups_assigned = GroupAssignments {
             seed_to_soil: &groups[0],
@@ -47,9 +52,14 @@ impl Day for Day5Part2 {
             temperature_to_humidity: &groups[5],
             humidity_to_location: &groups[6],
         };
-        //todo
-        println!("Day 5 Part 2 Solution: {:?}", seeds.iter().map(|s| resolve_location_number(&groups_assigned, *s)).min().unwrap());
-        // dbg!(&resolve_location_number(&groups_assigned, 13));
+
+        let mut lowest_location = u64::MAX;
+        for range in seed_ranges {
+            for j in range {
+                lowest_location = lowest_location.min(resolve_location_number(&groups_assigned, j));
+            }
+        }
+        println!("Day 5 Part 2 Solution: {:?}", lowest_location);
     }
 }
 

@@ -10,19 +10,19 @@ use nom::sequence::{tuple};
 use daytemplate::{Day, DayPart};
 use rustutils::nom_helpers::consume_empty_space;
 
-pub struct Day5Part1;
+pub struct Day5Part2;
 
-impl Day5Part1 {
+impl Day5Part2 {
     pub fn new() -> Self {
-        Day5Part1 {}
+        Day5Part2 {}
     }
 }
 
-impl Day for Day5Part1 {
+impl Day for Day5Part2 {
     type ParseOutput = (Vec<Group>, Vec<u64>);
 
     fn part() -> DayPart {
-        DayPart::ONE
+        DayPart::TWO
     }
 
     fn day() -> i32 {
@@ -47,8 +47,8 @@ impl Day for Day5Part1 {
             temperature_to_humidity: &groups[5],
             humidity_to_location: &groups[6],
         };
-
-        println!("Day 5 Part 1 Solution: {:?}", seeds.iter().map(|s| resolve_location_number(&groups_assigned, *s)).min().unwrap());
+        //todo
+        println!("Day 5 Part 2 Solution: {:?}", seeds.iter().map(|s| resolve_location_number(&groups_assigned, *s)).min().unwrap());
         // dbg!(&resolve_location_number(&groups_assigned, 13));
     }
 }

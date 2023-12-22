@@ -53,7 +53,6 @@ impl Day for Day5Part2 {
             humidity_to_location: &groups[6],
         };
 
-        // let mut location = groups_assigned.humidity_to_location.rows.iter().map(|r| r.destination_range_start).min().unwrap();
         let mut location = 0;
         loop {
             let mut seed = location;

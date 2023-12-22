@@ -53,6 +53,43 @@ impl Day for Day5Part2 {
             humidity_to_location: &groups[6],
         };
 
+        // let mut location = groups_assigned.humidity_to_location.rows.iter().map(|r| r.destination_range_start).min().unwrap();
+        let mut location = 0;
+        loop {
+            let mut seed = location;
+            for group in groups_assigned.chain().iter().rev() {
+                seed = group.reverse_search(seed);
+            }
+            if seed_ranges.iter().any(|x| x.contains(&seed)){
+                break;
+            }
+            location += 1;
+        }
+        println!("Day 5 Part 2 Solution: {:?}", location);
+    }
+}
+
+/*
+// OLD ->
+fn solve(&self) {
+        let input = self.sample("part_1").replace("\r\n", "\n");
+        // let input = self.input().replace("\r\n", "\n");
+        let (groups, seeds) = self.parse(&input);
+        let seed_ranges = seeds
+            .chunks_exact(2)
+            .map(|range| range[0]..(range[0] + range[1]))
+            .collect_to_vec();
+
+        let groups_assigned = GroupAssignments {
+            seed_to_soil: &groups[0],
+            soil_to_fertilizer: &groups[1],
+            fertilizer_to_water: &groups[2],
+            water_to_light: &groups[3],
+            light_to_temperature: &groups[4],
+            temperature_to_humidity: &groups[5],
+            humidity_to_location: &groups[6],
+        };
+
         let mut lowest_location = u64::MAX;
         for range in seed_ranges {
             for j in range {
@@ -61,7 +98,7 @@ impl Day for Day5Part2 {
         }
         println!("Day 5 Part 2 Solution: {:?}", lowest_location);
     }
-}
+ */
 
 fn resolve_location_number(groups: &GroupAssignments, initial_seed_number: u64) -> u64 {
     let mut source = initial_seed_number;
@@ -112,6 +149,17 @@ impl<'a> GroupAssignments<'a> {
 pub struct Group {
     heading: String,
     rows: Vec<GroupRow>,
+}
+
+impl Group {
+    fn reverse_search(&self, val: u64) -> u64 {
+        for row in &self.rows {
+            if row.destination_contains(val) {
+                return row.source_range_start + (val - row.destination_range_start);
+            }
+        }
+        val
+    }
 }
 
 fn nom_parse_input(input: &str) -> IResult<&str, (Vec<Group>, Vec<u64>)> {

@@ -12,12 +12,6 @@ type NumberType = u32;
 
 pub struct Day6Part1 {}
 
-impl Day6Part1 {
-    pub fn new() -> Day6Part1 {
-        Self {}
-    }
-}
-
 impl Day for Day6Part1 {
     type ParseOutput = ParsedData;
 
@@ -30,18 +24,29 @@ impl Day for Day6Part1 {
     }
 
     fn parse(&self, input: &str) -> Self::ParseOutput {
-        let (i_, data) = nom_parse_input(input).unwrap();
+        let (_, data) = nom_parse_input(input).unwrap();
         data
     }
 
     fn solve(&self) {
-        let input = self.sample("part_1");
+        // let input = self.sample("part_1");
+        let input = self.input();
         let parsed = self.parse(&input);
-        for pair in parsed.pairs() {
-
+        let mut total = 1;
+        for record in parsed.records() {
+            total *= (1..=record.time).filter(|t| hold_button(&record, *t) > record.distance).count();
         }
+        println!("Day 6 Part 1: {}", total);
     }
 }
+
+fn hold_button(record: &RaceRecord, hold_time: u32) -> u32 {
+    if hold_time >= record.time {
+        return 0;
+    }
+    (record.time - hold_time) * hold_time
+}
+
 
 fn nom_parse_input(input: &str) -> IResult<&str, ParsedData> {
     let (input, times) = nom_parse_row(input)?;
@@ -67,13 +72,13 @@ pub struct ParsedData {
 }
 
 impl ParsedData {
-    fn pairs(&self) -> Vec<MatchedPair> {
-        self.times.iter().zip(self.distances.iter()).map(|(&t, &d)| MatchedPair { time: t, distance: d }).collect()
+    fn records(&self) -> Vec<RaceRecord> {
+        self.times.iter().zip(self.distances.iter()).map(|(&t, &d)| RaceRecord { time: t, distance: d }).collect()
     }
 }
 
 #[derive(Debug)]
-pub struct MatchedPair {
+pub struct RaceRecord {
     time: NumberType,
     distance: NumberType,
 }

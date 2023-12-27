@@ -1,12 +1,5 @@
-use nom::{IResult, Parser};
-use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, digit1, multispace0, multispace1};
-use nom::combinator::map_res;
-use nom::multi::separated_list0;
-use nom::sequence::tuple;
-
+use nom::Parser;
 use daytemplate::{Day, DayPart};
-use rustutils::nom_helpers::consume_empty_space;
 
 type NumberType = i64;
 

@@ -1,5 +1,5 @@
 use nom::branch::alt;
-use nom::character::complete::{multispace1, newline};
+use nom::character::complete::{line_ending, multispace1, newline};
 use nom::combinator::map_res;
 use nom::IResult;
 use nom::multi::many0;
@@ -8,7 +8,7 @@ use nom::multi::many0;
  consumes whitespace and newlines until there is no more to consume.
  */
 pub fn consume_empty_space(input: &str) -> IResult<&str, ()> {
-    let (input, _) = many0(alt((multispace1, map_res(newline, |_c: char| Result::<&str, ()>::Ok("")))))(input)?;
+    let (input, _) = many0(alt((multispace1, line_ending)))(input)?;
     Ok((input, ()))
 }
 

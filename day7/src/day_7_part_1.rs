@@ -28,7 +28,9 @@ impl Day for Day7Part1 {
     fn solve(&self) {
         let input = self.sample("part_1");
         let parsed = self.parse(&input);
-        println!("{:?}", parsed);
+        for hand in &parsed {
+            println!("{:?}", process_hand(hand));
+        }
     }
 }
 
@@ -87,7 +89,7 @@ fn nom_parse_hand(input: &str) -> IResult<&str, Hand> {
 }
 
 
-
+#[derive(Debug)]
 enum HandMatch {
     FiveOfAKind,
     FourOfAKind,
@@ -112,11 +114,11 @@ impl HandMatch {
     }
 }
 
+#[derive(Debug)]
 struct CalculatedHandResult {
     hand_match: HandMatch,
-    label: char,
+    labels: Vec<char>,
 }
-
 
 
 /*
@@ -140,39 +142,96 @@ struct CondensedCard {
     card: Card,
     count: u32,
 }
-fn calc_hand_match(hand: &Hand) -> CalculatedHandResult {
+
+fn process_hand(hand: &Hand) -> CalculatedHandResult {
     let label_to_count = hand.cards.iter().fold(HashMap::new(), |mut h, card| {
         h.entry(card.label).and_modify(|v| *v += 1).or_insert(1);
         h
     });
-    let counts = label_to_count.iter().map(|(&label, &count)| CondensedCard {card: Card::new(label), count }).collect_to_vec();
-    let find_by_count = |count: u32| counts.iter().filter(|c| c.count == count).next();
-    if let Some(result) = find_by_count(5) {
+    // let counts = label_to_count.iter().map(|(&label, &count)| CondensedCard { card: Card::new(label), count }).collect_to_vec();
+    // let find_by_count = |count: u32| counts.iter().filter(|c| c.count == count).next();
+    // five of a kind
+    if let Some(card) = find_card_by_count(&hand, 5, &[]) {
         return CalculatedHandResult {
             hand_match: HandMatch::FiveOfAKind,
-            label: result.card.label,
+            labels: vec![card.card.label],
         };
     }
-    // five of a kind
-    if let Some(result) = find_by_count(4) {
+    // four of a kind
+    if let Some(card) = find_card_by_count(&hand, 4, &[]) {
         return CalculatedHandResult {
             hand_match: HandMatch::FourOfAKind,
-            label: result.card.label,
+            labels: vec![card.card.label],
         };
     }
     // full house
-    if let (Some(first), Some(second)) = (find_by_count(3), find_by_count(2))  {
+    if let Some(matches) = find_many_cards_by_counts(&hand, &[3, 2]) {
         return CalculatedHandResult {
             hand_match: HandMatch::FullHouse,
-            label: first.card.label, // todo: need to store this differently i think
-        }
+            labels: matches.iter().map(|m| m.card.label).collect(),
+        };
     }
     // three of a kind
-    if let (Some(first), Some(second), Some(third)) = (find_by_count(3), find_by_count(1), find_by_count(1)) {
+    if let Some(card) = find_card_by_count(&hand, 3, &[]) {
         return CalculatedHandResult {
             hand_match: HandMatch::ThreeOfAKind,
-            label: first.card.label,
+            labels: vec![card.card.label],
+        };
+    }
+    // two pair
+    if let Some(matches) = find_many_cards_by_counts(&hand, &[2, 2]) {
+        return CalculatedHandResult {
+            hand_match: HandMatch::TwoPair,
+            labels: matches.iter().map(|m| m.card.label).collect(),
+        };
+    }
+    // one pair
+    if let Some(card) = find_card_by_count(&hand, 2, &[]) {
+        return CalculatedHandResult {
+            hand_match: HandMatch::OnePair,
+            labels: vec![card.card.label],
+        };
+    }
+    // high card
+    if let Some(card) = find_many_cards_by_counts(&hand, &[1, 1, 1, 1, 1]) {
+        return CalculatedHandResult {
+            hand_match: HandMatch::HighCard,
+            labels: card.iter().map(|m| m.card.label).collect(),
+        };
+    }
+
+    unreachable!("This should never be reached; if this is reached, please panic calmly and exit in a orderly fashion. However, if the issue is \
+    that you are stuck in vim, don't bother asking for help. You are forever stuck in vim.")
+}
+
+fn find_card_by_count(hand: &Hand, expected_count: u32, excluded: &[char]) -> Option<CondensedCard> {
+    for card in &hand.cards {
+        if excluded.contains(&card.label) {
+            continue;
+        }
+        let count = (&hand.cards).iter().filter(|c| c.label == card.label).count();
+        if count == expected_count as usize {
+            return Some(CondensedCard { card: *card, count: count as u32 });
         }
     }
-    todo!()
+    None
+}
+
+fn find_many_cards_by_counts(hand: &Hand, expected_counts: &[u32]) -> Option<Vec<CondensedCard>> {
+    let mut excluded = Vec::with_capacity(5);
+    let mut out = Vec::with_capacity(expected_counts.len());
+    for expected_count in expected_counts {
+        let card = find_card_by_count(hand, *expected_count, &excluded);
+        match card {
+            None => return None,
+            Some(val) => {
+                excluded.push(val.card.label);
+                out.push(val);
+            }
+        }
+    }
+    if out.len() == expected_counts.len() {
+        return Some(out);
+    }
+    return None;
 }

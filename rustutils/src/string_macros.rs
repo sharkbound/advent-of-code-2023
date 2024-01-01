@@ -61,3 +61,49 @@ macro_rules! string_split {
             .collect::<Vec<String>>()
     };
 }
+
+#[macro_export]
+macro_rules! join_to_string_debug {
+    ($iterator:expr, $sep:expr) => {{
+        let mut buf = String::new();
+        let mut iterator = $iterator.into_iter();
+
+        if let Some(item) = iterator.next() {
+            buf.push_str(&format!("{:?}", item));
+        }
+
+        for item in iterator {
+            buf.push_str($sep);
+            buf.push_str(&format!("{:?}", item));
+        }
+
+        buf
+    }};
+
+    ($iterator:expr) => {
+        join_to_string_debug!($iterator, ", ")
+    }
+}
+
+#[macro_export]
+macro_rules! join_to_string {
+    ($iterator:expr, $sep:expr) => {{
+        let mut buf = String::new();
+        let mut iterator = $iterator.into_iter();
+
+        if let Some(item) = iterator.next() {
+            buf.push_str(&format!("{}", item));
+        }
+
+        for item in iterator {
+            buf.push_str($sep);
+            buf.push_str(&format!("{}", item));
+        }
+
+        buf
+    }};
+
+    ($iterator:expr) => {
+        join_to_string!($iterator, ", ")
+    }
+}

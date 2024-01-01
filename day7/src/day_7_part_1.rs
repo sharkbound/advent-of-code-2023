@@ -4,8 +4,18 @@ use nom::IResult;
 use nom::multi::separated_list1;
 use nom::sequence::tuple;
 use daytemplate::{Day, DayPart};
-use rustutils::collections::CollectToVec;
+use rustutils::{join_to_string, join_to_string_debug};
 use rustutils::nom_helpers::consume_empty_space;
+
+const ORDER: [HandMatch; 7] = [
+    HandMatch::FiveOfAKind,
+    HandMatch::FourOfAKind,
+    HandMatch::FullHouse,
+    HandMatch::ThreeOfAKind,
+    HandMatch::TwoPair,
+    HandMatch::OnePair,
+    HandMatch::HighCard
+];
 
 pub struct Day7Part1 {}
 
@@ -25,12 +35,18 @@ impl Day for Day7Part1 {
         return nom_parsed.unwrap().1;
     }
 
+
     fn solve(&self) {
         let input = self.sample("part_1");
         let parsed = self.parse(&input);
-        for hand in &parsed {
-            println!("{:?}", process_hand(hand));
-        }
+        let mut processed = parsed.iter().map(process_hand).collect::<Vec<_>>();
+        processed.sort_by_key(|h| (-(h.hand_match.score() as i32), join_to_string!(&h.labels, "")));
+        println!("{}", join_to_string_debug!(&processed, "\n"));
+        // dbg!(&processed);
+        // let cur_score = parsed.len();
+        // for hand in &parsed {
+        //     println!("{:?}", process_hand(hand));
+        // }
     }
 }
 
@@ -209,9 +225,9 @@ fn find_card_by_count(hand: &Hand, expected_count: u32, excluded: &[char]) -> Op
         if excluded.contains(&card.label) {
             continue;
         }
-        let count = (&hand.cards).iter().filter(|c| c.label == card.label).count();
-        if count == expected_count as usize {
-            return Some(CondensedCard { card: *card, count: count as u32 });
+        let count = (&hand.cards).iter().filter(|c| c.label == card.label).count() as u32;
+        if count == expected_count {
+            return Some(CondensedCard { card: *card, count });
         }
     }
     None
@@ -221,8 +237,7 @@ fn find_many_cards_by_counts(hand: &Hand, expected_counts: &[u32]) -> Option<Vec
     let mut excluded = Vec::with_capacity(5);
     let mut out = Vec::with_capacity(expected_counts.len());
     for expected_count in expected_counts {
-        let card = find_card_by_count(hand, *expected_count, &excluded);
-        match card {
+        match find_card_by_count(hand, *expected_count, &excluded) {
             None => return None,
             Some(val) => {
                 excluded.push(val.card.label);

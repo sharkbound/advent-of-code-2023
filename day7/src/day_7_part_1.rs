@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use nom::character::complete::{alphanumeric1, digit1, line_ending};
 use nom::IResult;
 use nom::multi::separated_list1;
@@ -37,16 +38,25 @@ impl Day for Day7Part1 {
 
 
     fn solve(&self) {
-        let input = self.sample("part_1");
+        // let input = self.sample("part_1");
+        let input = self.input();
         let parsed = self.parse(&input);
         let mut processed = parsed.iter().map(process_hand).collect::<Vec<_>>();
-        processed.sort_by_key(|h| (-(h.hand_match.score() as i32), join_to_string!(&h.labels, "")));
-        println!("{}", join_to_string_debug!(&processed, "\n"));
-        // dbg!(&processed);
-        // let cur_score = parsed.len();
-        // for hand in &parsed {
-        //     println!("{:?}", process_hand(hand));
-        // }
+
+        let cmp_card_val = |hand: &Hand, idx: usize| -(hand.cards[idx].value as i32);
+
+        processed.sort_by_key(|h| (
+            -(h.hand_match.score() as i32),
+            [cmp_card_val(h.hand, 0), cmp_card_val(h.hand, 1), cmp_card_val(h.hand, 2), cmp_card_val(h.hand, 3), cmp_card_val(h.hand, 4)]
+        ));
+
+        // println!("{}", join_to_string!(&processed, "\n"));
+        let mut score = 0_u64;
+        for (hand, multiplier) in processed.iter().zip((1..=processed.len()).rev()) {
+            score += hand.hand.bet as u64 * multiplier as u64;
+            // println!("{} | {}: {}x", hand, hand.hand.bet, multiplier);
+        }
+        println!("Day 7 Part 1: {}", score);
     }
 }
 
@@ -83,7 +93,16 @@ pub struct Hand {
     bet: u32,
 }
 
-impl Hand {}
+impl<'a> Display for CalculatedHandResult<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Hand {{Bet: {}, Cards: {}}}",
+            self.hand.bet,
+            join_to_string!(self.hand.cards.iter().map(|x| x.label), ""),
+        )
+    }
+}
 
 fn nom_parse(input: &str) -> IResult<&str, Vec<Hand>> {
     separated_list1(line_ending, nom_parse_hand)(input)
@@ -131,7 +150,8 @@ impl HandMatch {
 }
 
 #[derive(Debug)]
-struct CalculatedHandResult {
+struct CalculatedHandResult<'a> {
+    hand: &'a Hand,
     hand_match: HandMatch,
     labels: Vec<char>,
 }
@@ -169,6 +189,7 @@ fn process_hand(hand: &Hand) -> CalculatedHandResult {
     // five of a kind
     if let Some(card) = find_card_by_count(&hand, 5, &[]) {
         return CalculatedHandResult {
+            hand,
             hand_match: HandMatch::FiveOfAKind,
             labels: vec![card.card.label],
         };
@@ -176,6 +197,7 @@ fn process_hand(hand: &Hand) -> CalculatedHandResult {
     // four of a kind
     if let Some(card) = find_card_by_count(&hand, 4, &[]) {
         return CalculatedHandResult {
+            hand,
             hand_match: HandMatch::FourOfAKind,
             labels: vec![card.card.label],
         };
@@ -183,6 +205,7 @@ fn process_hand(hand: &Hand) -> CalculatedHandResult {
     // full house
     if let Some(matches) = find_many_cards_by_counts(&hand, &[3, 2]) {
         return CalculatedHandResult {
+            hand,
             hand_match: HandMatch::FullHouse,
             labels: matches.iter().map(|m| m.card.label).collect(),
         };
@@ -190,6 +213,7 @@ fn process_hand(hand: &Hand) -> CalculatedHandResult {
     // three of a kind
     if let Some(card) = find_card_by_count(&hand, 3, &[]) {
         return CalculatedHandResult {
+            hand,
             hand_match: HandMatch::ThreeOfAKind,
             labels: vec![card.card.label],
         };
@@ -197,6 +221,7 @@ fn process_hand(hand: &Hand) -> CalculatedHandResult {
     // two pair
     if let Some(matches) = find_many_cards_by_counts(&hand, &[2, 2]) {
         return CalculatedHandResult {
+            hand,
             hand_match: HandMatch::TwoPair,
             labels: matches.iter().map(|m| m.card.label).collect(),
         };
@@ -204,6 +229,7 @@ fn process_hand(hand: &Hand) -> CalculatedHandResult {
     // one pair
     if let Some(card) = find_card_by_count(&hand, 2, &[]) {
         return CalculatedHandResult {
+            hand,
             hand_match: HandMatch::OnePair,
             labels: vec![card.card.label],
         };
@@ -211,6 +237,7 @@ fn process_hand(hand: &Hand) -> CalculatedHandResult {
     // high card
     if let Some(card) = find_many_cards_by_counts(&hand, &[1, 1, 1, 1, 1]) {
         return CalculatedHandResult {
+            hand,
             hand_match: HandMatch::HighCard,
             labels: card.iter().map(|m| m.card.label).collect(),
         };

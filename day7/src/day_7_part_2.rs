@@ -18,13 +18,13 @@ const ORDER: [HandMatch; 7] = [
     HandMatch::HighCard
 ];
 
-pub struct Day7Part1 {}
+pub struct Day7Part2 {}
 
-impl Day for Day7Part1 {
+impl Day for Day7Part2 {
     type ParseOutput = Vec<Hand>;
 
     fn part() -> DayPart {
-        DayPart::ONE
+        DayPart::TWO
     }
 
     fn day() -> i32 {
@@ -51,7 +51,7 @@ impl Day for Day7Part1 {
             score += hand.hand.bet as u64 * multiplier as u64;
             // println!("{} | {}: {}x", hand, hand.hand.bet, multiplier);
         }
-        println!("Day 7 Part 1: {}", score);
+        println!("Day 7 Part 2: {}", score);
     }
 }
 
@@ -62,6 +62,10 @@ fn cmp_calculated_hand_result(hand: &CalculatedHandResult) -> (i32, [i32; 5]) {
     )
 }
 
+fn try_upgrade_jokers(hand: &Hand) -> Option<Hand> {
+    let joker_count = hand.cards.iter().filter(|card| card.is_joker()).count();
+    None
+}
 #[derive(Copy, Clone, Debug)]
 struct Card {
     label: char,

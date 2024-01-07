@@ -1,3 +1,5 @@
+#[allow(unused_variables)]
+
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use nom::character::complete::{alphanumeric1, digit1, line_ending};

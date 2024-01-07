@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+#[allow(unused_variables)]
+
 use std::fmt::{Display, Formatter};
 use nom::character::complete::{alphanumeric1, digit1, line_ending};
 use nom::IResult;
@@ -6,17 +7,9 @@ use nom::multi::separated_list1;
 use nom::sequence::tuple;
 use daytemplate::{Day, DayPart};
 use rustutils::{join_to_string};
+use rustutils::map_to::MapToExt;
 use rustutils::nom_helpers::consume_empty_space;
 
-const ORDER: [HandMatch; 7] = [
-    HandMatch::FiveOfAKind,
-    HandMatch::FourOfAKind,
-    HandMatch::FullHouse,
-    HandMatch::ThreeOfAKind,
-    HandMatch::TwoPair,
-    HandMatch::OnePair,
-    HandMatch::HighCard
-];
 
 pub struct Day7Part2 {}
 
@@ -38,8 +31,8 @@ impl Day for Day7Part2 {
 
 
     fn solve(&self) {
-        // let input = self.sample("part_1");
-        let input = self.input();
+        let input = self.sample("part_1");
+        // let input = self.input();
         let parsed = self.parse(&input);
         let mut processed = parsed.iter().map(process_hand).collect::<Vec<_>>();
 
@@ -52,20 +45,62 @@ impl Day for Day7Part2 {
             // println!("{} | {}: {}x", hand, hand.hand.bet, multiplier);
         }
         println!("Day 7 Part 2: {}", score);
+        // wrong: 255419998
     }
 }
 
 fn cmp_calculated_hand_result(hand: &CalculatedHandResult) -> (i32, [i32; 5]) {
     let cmp_card_val = |hand: &Hand, idx: usize| -(hand.cards[idx].value as i32);
-    (-(hand.hand_match.score() as i32),
-    [cmp_card_val(&hand.hand, 0), cmp_card_val(&hand.hand, 1), cmp_card_val(&hand.hand, 2), cmp_card_val(&hand.hand, 3), cmp_card_val(&hand.hand, 4)]
+    (-(hand_score_with_upgraded_jokers(hand).score as i32),
+     [cmp_card_val(&hand.hand, 0), cmp_card_val(&hand.hand, 1), cmp_card_val(&hand.hand, 2), cmp_card_val(&hand.hand, 3), cmp_card_val(&hand.hand, 4)]
     )
 }
 
-fn try_upgrade_jokers(hand: &Hand) -> Option<Hand> {
-    let joker_count = hand.cards.iter().filter(|card| card.is_joker()).count();
-    None
+#[derive(Debug)]
+struct UpgradedHand {
+    hand_match: HandMatch,
+    score: u32,
+    hand: Hand,
 }
+
+fn hand_score_with_upgraded_jokers(hand: &CalculatedHandResult) -> UpgradedHand {
+    let joker_count = hand.hand.cards.iter().filter(|card| card.is_joker()).count();
+    if joker_count == 0 {
+        return hand.hand_match.map_to(|x| UpgradedHand {
+            hand_match: x,
+            score: x.score(),
+            hand: hand.hand,
+        });
+    }
+
+    let most_common = find_most_common_card(&hand.hand);
+    process_hand(&Hand {
+        cards: hand.hand.cards.map(|c| if c.is_joker() { most_common.card } else { c }),
+        bet: hand.hand.bet,
+    }).map_to(|new_hand| UpgradedHand {
+        hand_match: new_hand.hand_match,
+        score: new_hand.hand_match.score(),
+        hand: new_hand.hand,
+    })
+}
+
+fn find_most_common_card(hand: &Hand) -> CondensedCard {
+    let ignored = &['J'];
+    if let Some(card) = find_card_by_count(hand, 5, ignored) {
+        return card;
+    }
+    if let Some(card) = find_card_by_count(hand, 4, ignored) {
+        return card;
+    }
+    if let Some(card) = find_card_by_count(hand, 3, ignored) {
+        return card;
+    }
+    if let Some(card) = find_card_by_count(hand, 2, ignored) {
+        return card;
+    }
+    CondensedCard { card: hand.cards[0], count: 1 }
+}
+
 #[derive(Copy, Clone, Debug)]
 struct Card {
     label: char,
@@ -75,20 +110,27 @@ struct Card {
 impl Card {
     fn new(char: char) -> Self {
         /*
-        A, K, Q, J, T
-        14 13 12 11 10
+        A, K, Q, T, 9, 8, 7, 6, 5, 4, 3, 2, J.
+        13 12 11 10 9  8  7  6  5  4  3  2  1
          */
         Self {
             label: char,
             value: match char {
+                'J' => 1,
                 ch @ '2'..='9' => ch.to_digit(10).unwrap(),
                 'T' => 10,
-                'J' => 11,
-                'Q' => 12,
-                'K' => 13,
-                'A' => 14,
+                'Q' => 11,
+                'K' => 12,
+                'A' => 13,
                 _ => unreachable!("Invalid card char: {}", char),
             },
+        }
+    }
+
+    fn empty() -> Self {
+        Self {
+            label: '_',
+            value: 0,
         }
     }
 
@@ -101,6 +143,26 @@ impl Card {
 pub struct Hand {
     cards: [Card; 5],
     bet: u32,
+}
+
+impl From<([char; 5], u32)> for Hand {
+    fn from((cards, bet): ([char; 5], u32)) -> Self {
+        Self {
+            cards: cards.map(|x| Card::new(x)),
+            bet,
+        }
+    }
+}
+
+impl<'a> From<(&'a str, u32)> for Hand {
+    fn from((cards, bet): (&'a str, u32)) -> Self {
+        Self {
+            cards: cards.chars().map_to(|mut it| [
+                it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap(), it.next().unwrap()
+            ].map(|x| Card::new(x))),
+            bet,
+        }
+    }
 }
 
 impl Display for CalculatedHandResult {
@@ -134,7 +196,7 @@ fn nom_parse_hand(input: &str) -> IResult<&str, Hand> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum HandMatch {
     FiveOfAKind,
     FourOfAKind,
@@ -190,10 +252,6 @@ struct CondensedCard {
 }
 
 fn process_hand(hand: &Hand) -> CalculatedHandResult {
-    let label_to_count = hand.cards.iter().fold(HashMap::new(), |mut h, card| {
-        h.entry(card.label).and_modify(|v| *v += 1).or_insert(1);
-        h
-    });
     // let counts = label_to_count.iter().map(|(&label, &count)| CondensedCard { card: Card::new(label), count }).collect_to_vec();
     // let find_by_count = |count: u32| counts.iter().filter(|c| c.count == count).next();
     // five of a kind
@@ -286,4 +344,57 @@ fn find_many_cards_by_counts(hand: &Hand, expected_counts: &[u32]) -> Option<Vec
         return Some(out);
     }
     return None;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hand_upgrades_one_to_two() {
+        let hand = Hand::from(("274J6", 100));
+        let processed = process_hand(&hand);
+        let upgraded = hand_score_with_upgraded_jokers(&processed);
+        assert_eq!(upgraded.hand_match, HandMatch::OnePair);
+    }
+
+    #[test]
+    fn test_hand_upgrades_two_to_three() {
+        let hand = Hand::from(("224J6", 100));
+        let processed = process_hand(&hand);
+        let upgraded = hand_score_with_upgraded_jokers(&processed);
+        assert_eq!(upgraded.hand_match, HandMatch::ThreeOfAKind);
+    }
+
+    #[test]
+    fn test_hand_upgrades_three_to_four() {
+        let hand = Hand::from(("QQQJ6", 100));
+        let processed = process_hand(&hand);
+        let upgraded = hand_score_with_upgraded_jokers(&processed);
+        assert_eq!(upgraded.hand_match, HandMatch::FourOfAKind);
+    }
+
+    #[test]
+    fn test_hand_upgrades_four_to_five() {
+        let hand = Hand::from(("2222J", 100));
+        let processed = process_hand(&hand);
+        let upgraded = hand_score_with_upgraded_jokers(&processed);
+        assert_eq!(upgraded.hand_match, HandMatch::FiveOfAKind);
+    }
+
+    #[test]
+    fn test_hand_upgrades_no_upgrades() {
+        let hand = Hand::from(("27496", 100));
+        let processed = process_hand(&hand);
+        let upgraded = hand_score_with_upgraded_jokers(&processed);
+        assert_eq!(upgraded.hand_match, HandMatch::HighCard);
+    }
+
+    #[test]
+    fn test_hand_upgrades_two_pair_to_full_house() {
+        let hand = Hand::from(("22JQQ", 100));
+        let processed = process_hand(&hand);
+        let upgraded = hand_score_with_upgraded_jokers(&processed);
+        assert_eq!(upgraded.hand_match, HandMatch::FullHouse);
+    }
 }

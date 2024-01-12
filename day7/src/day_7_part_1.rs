@@ -1,5 +1,4 @@
-#[allow(unused_variables)]
-
+#[allow(dead_code, unused_variables)]
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use nom::character::complete::{alphanumeric1, digit1, line_ending};
@@ -9,16 +8,6 @@ use nom::sequence::tuple;
 use daytemplate::{Day, DayPart};
 use rustutils::{join_to_string};
 use rustutils::nom_helpers::consume_empty_space;
-
-const ORDER: [HandMatch; 7] = [
-    HandMatch::FiveOfAKind,
-    HandMatch::FourOfAKind,
-    HandMatch::FullHouse,
-    HandMatch::ThreeOfAKind,
-    HandMatch::TwoPair,
-    HandMatch::OnePair,
-    HandMatch::HighCard
-];
 
 pub struct Day7Part1 {}
 
@@ -60,7 +49,7 @@ impl Day for Day7Part1 {
 fn cmp_calculated_hand_result(hand: &CalculatedHandResult) -> (i32, [i32; 5]) {
     let cmp_card_val = |hand: &Hand, idx: usize| -(hand.cards[idx].value as i32);
     (-(hand.hand_match.score() as i32),
-    [cmp_card_val(&hand.hand, 0), cmp_card_val(&hand.hand, 1), cmp_card_val(&hand.hand, 2), cmp_card_val(&hand.hand, 3), cmp_card_val(&hand.hand, 4)]
+     [cmp_card_val(&hand.hand, 0), cmp_card_val(&hand.hand, 1), cmp_card_val(&hand.hand, 2), cmp_card_val(&hand.hand, 3), cmp_card_val(&hand.hand, 4)]
     )
 }
 
@@ -88,10 +77,6 @@ impl Card {
                 _ => unreachable!("Invalid card char: {}", char),
             },
         }
-    }
-
-    fn is_joker(&self) -> bool {
-        self.label == 'J'
     }
 }
 
@@ -161,6 +146,7 @@ impl HandMatch {
 struct CalculatedHandResult {
     hand: Hand,
     hand_match: HandMatch,
+    #[allow(dead_code)]
     labels: Vec<char>,
 }
 
@@ -184,11 +170,12 @@ High card, where all cards' labels are distinct:
 
 struct CondensedCard {
     card: Card,
+    #[allow(dead_code)]
     count: u32,
 }
 
 fn process_hand(hand: &Hand) -> CalculatedHandResult {
-    let label_to_count = hand.cards.iter().fold(HashMap::new(), |mut h, card| {
+    let _label_to_count = hand.cards.iter().fold(HashMap::new(), |mut h, card| {
         h.entry(card.label).and_modify(|v| *v += 1).or_insert(1);
         h
     });

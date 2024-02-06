@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, multispace0, multispace1};
+use nom::character::complete::{alpha1, multispace0};
 use nom::combinator::map_res;
 use nom::IResult;
 use nom::multi::many1;
@@ -22,13 +22,13 @@ impl Day for Day8Part1 {
     }
 
     fn parse(&self, input: &str) -> Self::ParseOutput {
-        let (_, data) = nom_parse(input).unwrap();
+        let (_, _data) = nom_parse(input).unwrap();
     }
 
     fn solve(&self) {
         // let input = self.input();
         let input = self.sample("part_1");
-        let parsed = self.parse(&input);
+        let _parsed = self.parse(&input);
     }
 }
 
@@ -54,7 +54,7 @@ fn nom_parse_movements(input: &str) -> IResult<&str, Vec<Move>> {
 }
 
 fn nom_parse(input: &str) -> IResult<&str, ()> {
-    let (input, result) = nom_parse_movements(input)?;
+    let (input, _result) = nom_parse_movements(input)?;
     let (input, _) = consume_empty_space(input)?;
     let (input, conns) = nom_parse_connections(input)?;
     println!("{:?}", conns);

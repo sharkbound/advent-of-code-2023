@@ -72,6 +72,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "day8"
+version = "0.1.0"
+dependencies = [
+ "daytemplate",
+ "nom",
+ "rustutils",
+]
+
+[[package]]
 name = "daytemplate"
 version = "0.1.0"
 

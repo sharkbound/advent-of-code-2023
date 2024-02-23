@@ -9,3 +9,4 @@ edition = "2021"
 nom = "7.1.3"
 daytemplate = { path = "../daytemplate" }
 rustutils = { path = "../rustutils" }
+rustc-hash = "1.0.1"

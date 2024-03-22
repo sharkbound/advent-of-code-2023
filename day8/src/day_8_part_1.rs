@@ -9,6 +9,7 @@ use rustc_hash::FxHashMap;
 use daytemplate::{Day, DayPart};
 use rustutils::nom_helpers::consume_empty_space;
 
+
 pub(crate) struct Day8Part1;
 
 impl<'a> Day for Day8Part1 {
@@ -28,8 +29,8 @@ impl<'a> Day for Day8Part1 {
     }
 
     fn solve(&self) {
-        // let input = self.input();
-        let input = self.sample("part_1");
+        let input = self.input();
+        // let input = self.sample("part_1");
         let parsed = self.parse(&input);
 
         let mut moves = parsed.0;
@@ -39,28 +40,28 @@ impl<'a> Day for Day8Part1 {
         for node in nodes.iter() {
             node_connections.insert(node.node_id(), NodeConnections { left: node.node_left(), right: node.node_right() });
         }
-        
+
         let mut current_node = node_connections.iter().filter(|(node, _)| node.id == "AAA").next().unwrap().0;
         let mut jumps = 0u32;
         let mut idx = 0;
-        while current_node != &"ZZZ" {
+        while !current_node.id_equals("ZZZ") {
             jumps += 1;
             let connections = node_connections.get(&current_node).unwrap();
             let current_move = moves[idx];
-            
+
             let next_node = match current_move {
                 Move::Left => &connections.left,
                 Move::Right => &connections.right,
             };
-            
-            if current_node != next_node {
-                println!("Current Node: {:?}, Current Move: {:?} Next Node: {:?}", current_node.id, current_move, next_node.id);
-            }
-            
+
+            // if current_node != next_node {
+            //     println!("Current Node: {:?}, Current Move: {:?} Next Node: {:?}", current_node.id, current_move, next_node.id);
+            // }
+
             current_node = next_node;
             idx = (idx + 1) % moves.len();
         }
-        
+
         println!("Day 8 Part 1: {}", jumps);
     }
 }
@@ -104,11 +105,17 @@ struct Node<'a> {
     id: &'a str,
 }
 
-impl PartialEq<&str> for Node<'_> {
-    fn eq(&self, other: &&str) -> bool {
-        self.id == *other
+impl Node<'_> {
+    fn id_equals(&self, other: &str) -> bool {
+        self.id == other
     }
 }
+
+// impl PartialEq<&str> for Node<'_> {
+//     fn eq(&self, other: &&str) -> bool {
+//         self.id == *other
+//     }
+// }
 
 #[derive(Debug)]
 pub struct ParsedNode {
@@ -131,7 +138,7 @@ impl ParsedNode {
     }
 
     fn node_right(&self) -> Node {
-        Node { id: &self.id }
+        Node { id: &self.right }
     }
 
     fn node_id(&self) -> Node {
@@ -160,3 +167,4 @@ fn nom_parse_left_right_connections(input: &str) -> IResult<&str, (&str, &str)> 
         )(input)?
     )
 }
+

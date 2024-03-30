@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, multispace0};
+use nom::character::complete::{alpha1, alphanumeric1, multispace0};
 use nom::combinator::map_res;
 use nom::IResult;
 use nom::multi::many1;
@@ -10,13 +10,13 @@ use daytemplate::{Day, DayPart};
 use rustutils::nom_helpers::consume_empty_space;
 
 
-pub(crate) struct Day8Part1;
+pub(crate) struct Day8Part2;
 
-impl<'a> Day for Day8Part1 {
+impl<'a> Day for Day8Part2 {
     type ParseOutput = (Vec<Move>, Vec<ParsedNode>);
 
     fn part() -> DayPart {
-        DayPart::ONE
+        DayPart::TWO
     }
 
     fn day() -> i32 {
@@ -27,10 +27,14 @@ impl<'a> Day for Day8Part1 {
         let (_, data) = nom_parse(input).unwrap();
         data
     }
-
+    /*
+    If you were a ghost, 
+    you'd probably just start at every node that ends with A and follow all of the paths
+     at the same time until they all simultaneously end up at nodes that end with Z.
+     */
     fn solve(&self) {
         let input = self.input();
-        // let input = self.sample("part_1");
+        // let input = self.sample("part_2_1");
         let parsed = self.parse(&input);
 
         let moves = parsed.0;
@@ -41,28 +45,29 @@ impl<'a> Day for Day8Part1 {
             node_connections.insert(node.node_id(), NodeConnections { left: node.node_left(), right: node.node_right() });
         }
 
-        let mut current_node = node_connections.iter().filter(|(node, _)| node.id == "AAA").next().unwrap().0;
+        let mut current_nodes = node_connections
+            .iter()
+            .filter(|(node, _)| node.id.ends_with("A"))
+            .map(|x| x.0)
+            .collect::<Vec<&Node>>();
+        
         let mut jumps = 0u32;
         let mut idx = 0;
-        while !current_node.id_equals("ZZZ") {
+        while !current_nodes.iter().all(|n| n.id.ends_with("Z")) {
             jumps += 1;
-            let connections = node_connections.get(&current_node).unwrap();
             let current_move = moves[idx];
-
-            let next_node = match current_move {
-                Move::Left => &connections.left,
-                Move::Right => &connections.right,
-            };
-
-            // if current_node != next_node {
-            //     println!("Current Node: {:?}, Current Move: {:?} Next Node: {:?}", current_node.id, current_move, next_node.id);
-            // }
-
-            current_node = next_node;
+            for node in current_nodes.iter_mut() {
+                let connections = node_connections.get(node).unwrap();
+                let next_node = match current_move {
+                    Move::Left => &connections.left,
+                    Move::Right => &connections.right,
+                };
+                *node = next_node;
+            }
             idx = (idx + 1) % moves.len();
         }
 
-        println!("Day 8 Part 1: {}", jumps);
+        println!("Day 8 Part 2: {}", jumps);
     }
 }
 
@@ -150,7 +155,7 @@ fn nom_parse_connections(input: &str) -> IResult<&str, Vec<ParsedNode>> {
     Ok(many1(
         map_res(
             tuple((
-                alpha1, multispace0, tag("="), multispace0, delimited(tag("("), nom_parse_left_right_connections, tag(")")), consume_empty_space,
+                alphanumeric1, multispace0, tag("="), multispace0, delimited(tag("("), nom_parse_left_right_connections, tag(")")), consume_empty_space,
             )),
             |(id, _, _, _, (left, right), _)| Result::<ParsedNode, ()>::Ok(ParsedNode::new(id, left, right)),
         )
@@ -161,7 +166,7 @@ fn nom_parse_left_right_connections(input: &str) -> IResult<&str, (&str, &str)> 
     Ok(
         map_res(
             tuple((
-                alpha1, tag(","), multispace0, alpha1
+                alphanumeric1, tag(","), multispace0, alphanumeric1
             )),
             |x| Result::<(&str, &str), ()>::Ok((x.0, x.3)),
         )(input)?

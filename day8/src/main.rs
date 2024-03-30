@@ -1,8 +1,9 @@
 use daytemplate::Day;
 
 mod day_8_part_1;
+mod day_8_part_2;
 
 
 fn main() {
-    day_8_part_1::Day8Part1 {}.solve();
+    day_8_part_2::Day8Part2 {}.solve();
 }

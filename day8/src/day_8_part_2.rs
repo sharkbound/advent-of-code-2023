@@ -29,7 +29,7 @@ impl<'a> Day for Day8Part2 {
     }
     /*
     If you were a ghost, 
-    you'd probably just start at every node that ends with A and follow all of the paths
+    you'd probably just start at every node that ends with A and follow all the paths
      at the same time until they all simultaneously end up at nodes that end with Z.
      */
     fn solve(&self) {
@@ -49,32 +49,77 @@ impl<'a> Day for Day8Part2 {
             .iter()
             .filter(|(node, _)| node.id.ends_with("A"))
             .map(|x| x.0)
-            .collect::<Vec<&Node>>();
-        
-        let mut jumps = 0u32;
-        let mut idx = 0;
-        while !current_nodes.iter().all(|n| n.id.ends_with("Z")) {
-            jumps += 1;
-            let current_move = moves[idx];
-            for node in current_nodes.iter_mut() {
-                let connections = node_connections.get(node).unwrap();
-                let next_node = match current_move {
-                    Move::Left => &connections.left,
-                    Move::Right => &connections.right,
-                };
-                *node = next_node;
-            }
-            idx = (idx + 1) % moves.len();
-        }
+            .collect::<Vec<_>>();
 
-        println!("Day 8 Part 2: {}", jumps);
+        let mut move_idx = 0;
+        let mut jumps = 0;
+        let mut dist_to_z = Vec::new();
+        loop {
+            let changes = advance(moves[move_idx], &mut current_nodes, &node_connections);
+            // println!("{}({})[{}] : {:?}", jumps, changes.change_count, changes.new_z_nodes, current_nodes);
+            if changes.change_count == 0 {
+                break;
+            }
+            jumps += 1;
+            if changes.new_z_nodes != 0 {
+                dist_to_z.push(jumps);
+            }
+            move_idx = (move_idx + 1) % moves.len();
+        }
+        println!("All Z Distances: {:?}", dist_to_z);
+        println!("Day 8 Part 2: {}", dist_to_z.iter().fold(1, |acc, &x| lcm(acc, x)));
     }
+}
+
+fn gcd(mut a: u64, mut b: u64) -> u64 {
+    if a == b { return a; }
+    if b > a {
+        let temp = a;
+        a = b;
+        b = temp;
+    }
+    while b > 0 {
+        let temp = a;
+        a = b;
+        b = temp % b;
+    }
+    return a;
+}
+
+fn lcm(a: u64, b: u64) -> u64 {
+    return a * (b / gcd(a, b));
+}
+
+fn advance<'a>(move_: Move, current_nodes: &mut [&NodeName<'a>], connections: &'a FxHashMap<NodeName<'a>, NodeConnections>) -> Change {
+    let mut change_count = 0;
+    let mut new_z_nodes = 0;
+    for node in current_nodes.iter_mut() {
+        if node.id.ends_with("Z") {
+            continue;
+        }
+        let connections = connections.get(node).unwrap();
+        let new_node = match move_ {
+            Move::Left => &connections.left,
+            Move::Right => &connections.right,
+        };
+        *node = new_node;
+        change_count += 1;
+        if new_node.id.ends_with("Z") {
+            new_z_nodes += 1;
+        }
+    }
+    Change { change_count, new_z_nodes }
+}
+
+struct Change {
+    new_z_nodes: u32,
+    change_count: u32,
 }
 
 #[derive(Debug)]
 struct NodeConnections<'a> {
-    left: Node<'a>,
-    right: Node<'a>,
+    left: NodeName<'a>,
+    right: NodeName<'a>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -106,11 +151,11 @@ fn nom_parse(input: &str) -> IResult<&str, (Vec<Move>, Vec<ParsedNode>)> {
 }
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
-struct Node<'a> {
+struct NodeName<'a> {
     id: &'a str,
 }
 
-impl Node<'_> {
+impl NodeName<'_> {
     fn id_equals(&self, other: &str) -> bool {
         self.id == other
     }
@@ -138,16 +183,16 @@ impl ParsedNode {
         }
     }
 
-    fn node_left(&self) -> Node {
-        Node { id: &self.left }
+    fn node_left(&self) -> NodeName {
+        NodeName { id: &self.left }
     }
 
-    fn node_right(&self) -> Node {
-        Node { id: &self.right }
+    fn node_right(&self) -> NodeName {
+        NodeName { id: &self.right }
     }
 
-    fn node_id(&self) -> Node {
-        Node { id: &self.id }
+    fn node_id(&self) -> NodeName {
+        NodeName { id: &self.id }
     }
 }
 
@@ -161,6 +206,7 @@ fn nom_parse_connections(input: &str) -> IResult<&str, Vec<ParsedNode>> {
         )
     )(input)?)
 }
+
 
 fn nom_parse_left_right_connections(input: &str) -> IResult<&str, (&str, &str)> {
     Ok(

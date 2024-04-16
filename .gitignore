@@ -18,3 +18,4 @@ Cargo.lock
 /.idea/modules.xml
 /.idea/vcs.xml
 /secrets/session.txt
+/.idea/inspectionProfiles/Project_Default.xml

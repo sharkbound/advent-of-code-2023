@@ -82,6 +82,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "day9"
+version = "0.1.0"
+dependencies = [
+ "daytemplate",
+ "nom",
+ "rustc-hash",
+ "rustutils",
+]
+
+[[package]]
 name = "daytemplate"
 version = "0.1.0"
 

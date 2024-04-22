@@ -3,7 +3,7 @@ use daytemplate::{Day, DayPart};
 pub struct Day9Part1;
 
 impl Day for Day9Part1 {
-    type ParseOutput = Vec<Vec<u32>>;
+    type ParseOutput = Vec<Vec<i64>>;
 
     fn part() -> DayPart {
         DayPart::ONE
@@ -17,44 +17,56 @@ impl Day for Day9Part1 {
         input.lines()
             .map(|line|
                 line.split(' ')
-                    .flat_map(|x| x.parse::<u32>())
-                    .collect::<Vec<u32>>()
+                    .flat_map(|x| x.parse::<i64>())
+                    .collect::<Vec<i64>>()
             ).collect()
     }
 
     fn solve(&self) {
-        // let input = self.input();
-        let input = self.sample("part_1");
+        let input = self.input();
+        // let input = self.sample("part_1");
         let parsed = self.parse(&input);
-
+        let mut total = 0;
         for line in parsed.iter() {
-            let diffs = generate_differences(line);
-            println!("DIFFS: {:?}", diffs);
-            for i in (1..diffs.len()).rev() {
-                let first = &diffs[i];
-                let second = &diffs[i - 1];
-                let step_first = find_step(first);
-                let step_second = find_step(second);
-                println!("{:?} -> {} | {:?} -> {}", first, step_first, second, step_second);
+            let mut prev = 0;
+            let mut current = 0;
+            for diff in generate_differences(line).iter().rev() {
+                match diff.last() {
+                    Some(&current_last_value) => {
+                        current = current_last_value + prev;
+                        prev = current_last_value + prev;
+                    }
+                    None => {}
+                }
             }
+            total += current;
         }
+
+        println!("Day 9 Part 1: {:?}", total);
+        // too high: 1_915_684_757
     }
 }
 
-fn diff_once(data: &Vec<u32>) -> Vec<u32> {
-    let mut diffs = Vec::with_capacity(data.len() - 1);
+fn diff_once(data: &[i64]) -> Option<Vec<i64>> {
+    if data.len() < 2 { // fixme: possible mishandling of input size?
+        return None;
+    }
+    let mut diffs = Vec::new();
     for i in 0..data.len() - 1 {
-        diffs.push(data[i].abs_diff(data[i + 1]));
+        diffs.push(data[i + 1] - data[i]);
     }
-    diffs
+    Some(diffs)
 }
 
-fn generate_differences(data: &Vec<u32>) -> Vec<Vec<u32>> {
+fn generate_differences(data: &Vec<i64>) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
     let mut current_diffs = data.clone();
     out.push(current_diffs.clone());
     loop {
-        let diffs = diff_once(&current_diffs);
+        let diffs = match diff_once(&current_diffs) {
+            Some(diffs) => diffs,
+            None => return out,
+        };
         out.push(diffs.clone());
         if diffs_are_zero(&diffs) {
             return out;
@@ -63,54 +75,8 @@ fn generate_differences(data: &Vec<u32>) -> Vec<Vec<u32>> {
     }
 }
 
-fn diffs_are_zero(diffs: &[u32]) -> bool {
+fn diffs_are_zero(diffs: &[i64]) -> bool {
     diffs.iter().all(|&x| x == 0)
-}
-
-#[derive(Debug)]
-struct StepValues {
-    changes: Vec<u32>,
-    diff_between_changes: u32,
-}
-
-impl StepValues {
-    fn new(values: Vec<u32>) -> Self {
-        let mut changes = Vec::new();
-        for i in 1..values.len() {
-            let prev = values[i - 1];
-            let curr = values[i];
-            changes.push(curr.abs_diff(prev));
-        }
-        Self {
-            diff_between_changes: match &changes[..] {
-                [val ] => *val,
-                [v1, v2, ..] => v1.abs_diff(*v2),
-                [] => 0,
-            },
-            changes,
-        }
-    }
-}
-
-fn find_step(data: &[u32]) -> u32 {
-    match data {
-        [first, second] => first.abs_diff(*second),
-        [first, second, third, ..] => {
-            let diff_first_second = first.abs_diff(*second);
-            let diff_second_third = second.abs_diff(*third);
-            if diff_first_second == diff_second_third {
-                return diff_first_second;
-            }
-            first.abs_diff(*second).abs_diff(second.abs_diff(*third))
-        }
-        _ => 0
-    }
-}
-
-fn first_and_second(data: &[u32]) -> (u32, u32) {
-    let first = data.first().unwrap();
-    let second = data.get(1).unwrap_or(data.first().unwrap());
-    (*first, *second)
 }
 
 

@@ -48,7 +48,7 @@ impl Day for Day9Part1 {
 }
 
 fn diff_once(data: &[i64]) -> Option<Vec<i64>> {
-    if data.len() < 2 { // fixme: possible mishandling of input size?
+    if data.len() < 2 {
         return None;
     }
     let mut diffs = Vec::new();

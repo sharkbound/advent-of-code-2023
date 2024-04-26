@@ -31,12 +31,16 @@ impl Day for Day9Part2 {
             let mut prev = 0;
             let mut current = 0;
             for diff in generate_differences(line).iter().rev() {
-                match diff.first() {
-                    Some(&current_last_value) => {
-                        current = current_last_value + prev;
-                        prev = current_last_value + prev;
+                let mut iter = diff.iter();
+                match (iter.next(), iter.next()) {
+                    (Some(&first), Some(&second)) => {
+                        let change = first - second; // fixme: issue seems to around here.
+                        current = prev + change;
+                        prev += change;
+                        // log current, prev, change
+                        println!("{:?}", (current, prev, change));
                     }
-                    None => {}
+                    _ => {}
                 }
             }
             total += current;

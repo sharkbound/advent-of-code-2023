@@ -23,15 +23,15 @@ impl Day for Day9Part2 {
     }
 
     fn solve(&self) {
-        let input = self.input();
-        // let input = self.sample("part_1");
+        // let input = self.input();
+        let input = self.sample("part_1");
         let parsed = self.parse(&input);
         let mut total = 0;
         for line in parsed.iter() {
             let mut prev = 0;
             let mut current = 0;
             for diff in generate_differences(line).iter().rev() {
-                match diff.last() {
+                match diff.first() {
                     Some(&current_last_value) => {
                         current = current_last_value + prev;
                         prev = current_last_value + prev;
@@ -80,15 +80,9 @@ fn diffs_are_zero(diffs: &[i64]) -> bool {
 
 
 /*
-[[10, 13, 16, 21, 30, 45], 
-[3, 3, 5, 9, 15], 
-[0, 2, 4, 6], 
-[2, 2, 2], 
-[0, 0]]
-
-10  13  16  21  30  45  68
-   3   3   5   9  15  23
-     0   2   4   6   8
-       2   2   2   2
-         0   0   0
+5  10  13  16  21  30  45
+  5   3   3   5   9  15
+   -2   0   2   4   6
+      2   2   2   2
+        0   0   0
 */

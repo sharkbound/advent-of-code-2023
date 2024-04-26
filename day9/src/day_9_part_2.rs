@@ -1,12 +1,12 @@
 use daytemplate::{Day, DayPart};
 
-pub struct Day9Part1;
+pub struct Day9Part2;
 
-impl Day for Day9Part1 {
+impl Day for Day9Part2 {
     type ParseOutput = Vec<Vec<i64>>;
 
     fn part() -> DayPart {
-        DayPart::ONE
+        DayPart::TWO
     }
 
     fn day() -> i32 {
@@ -42,7 +42,7 @@ impl Day for Day9Part1 {
             total += current;
         }
 
-        println!("Day 9 Part 1: {:?}", total);
+        println!("Day 9 Part 2: {:?}", total);
     }
 }
 
